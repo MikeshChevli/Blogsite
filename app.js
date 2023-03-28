@@ -41,10 +41,6 @@ async function getAllPosts() {
   return allPost;
 };
 
-async function getPostById(id) {
-  return Post.findById(id);
-};
-
 app.set('view engine', 'ejs');
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -74,8 +70,10 @@ app.post("/compose", function (req, res) {
 });
 
 app.get("/posts/:postId", function (req, res) {
-  getPostById(req.params.postId)
-    .then(function (post) { res.render("post", { post: post }); });
+  const reqPostId = req.params.postId;
+  Post.findOne({ _id: reqPostId }, function (err, post) {
+    res.render("post", { title: post.title, content: post.content });
+  });
 });
 
 connectDB()
