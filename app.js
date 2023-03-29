@@ -13,22 +13,27 @@ const contactContent = "Scelerisque eleifend donec pretium vulputate sapien. Rho
 
 const app = express();
 
-let Posts = [];
+app.set('view engine', 'ejs');
 
-const blogSchema = { title: String, content: String };
-
-mongoose.set("strictQuery", false);
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
 async function connectDB() {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    Post = mongoose.model("Blog", blogSchema);
     console.log("MongoDB Connected: " + conn.connection.host);
   } catch (error) {
     console.log(error);
     process.exit(1);
   };
 };
+
+const blogSchema = { title: String, content: String };
+
+const Post = mongoose.model("Post", blogSchema);
+
+mongoose.set("strictQuery", false);
+
 
 async function savePost(title, content) {
   const post = new Post({ title: title, content: content });
@@ -41,11 +46,9 @@ async function getAllPosts() {
   return allPost;
 };
 
-app.set('view engine', 'ejs');
-
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(express.static("public"));
+async function getPostById(id) {
+  return Post.findById(id);
+};
 
 app.get("/", function (req, res) {
   getAllPosts()
@@ -69,11 +72,26 @@ app.post("/compose", function (req, res) {
   res.redirect("/");
 });
 
+// app.get("/posts/:postId", function (req, res) {
+//   const reqPostId = req.params.postId;
+//   Posts.findById(reqPostId).then(function (post) {
+//     res.render("post", { title: post.title, content: post.content });
+//   });
+// });
+
 app.get("/posts/:postId", function (req, res) {
   const reqPostId = req.params.postId;
-  Post.findOne({ _id: reqPostId }, function (err, post) {
-    res.render("post", { title: post.title, content: post.content });
-  });
+
+  Post.findOne({_id: reqPostId })
+    .then(function (post) {
+      res.render("post", {
+        title: post.title,
+        content: post.content
+      });
+    })
+    .catch(function (err) {
+      console.log(err);
+    })
 });
 
 connectDB()
